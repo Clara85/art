@@ -21,7 +21,44 @@
     "contact": "Contact"
   },
   "course": {
-    "title": "Peinture Créative - Raconter son Monde Intérieur avec des Images et des Mots - Plan de Cours",
+    "title": "Dessin Créatif pour l'Illustration & les Livres Illustrés",
+    "intro": {
+      "description": "À partir de février 2026, j'enseignerai le **Dessin Créatif pour l'Illustration & les Livres Illustrés** à la maison des arts participatifs. Ce cours est une exploration ludique et expérimentale de l'illustration, conçu pour vous aider à construire votre propre langage visuel à travers les lignes, les formes, la couleur, la texture et la narration.",
+      "whatYouLearn": {
+        "title": "Ce que vous allez apprendre",
+        "foundations": {
+          "title": "Les bases de l'illustration",
+          "content": [
+            "Utiliser **les lignes, les formes, les aplats de couleur, la déformation, la perspective et les textures**",
+            "Dessiner des personnages (portraits et silhouettes entières), des animaux et des éléments naturels : **arbres, montagnes, nuages, eau**, etc."
+          ]
+        },
+        "medium": {
+          "title": "Travaillez avec le médium de votre choix",
+          "content": "Vous pouvez utiliser n'importe quel matériel : **crayon, plume, aquarelle, crayons de cire, acrylique, feutres, ou outils numériques comme Procreate.** Le but est de trouver la méthode d'expression qui vous ressemble."
+        },
+        "story": {
+          "title": "Histoire + Image",
+          "content": [
+            "Écrire de petites histoires personnelles",
+            "Apprendre à créer des illustrations qui accompagnent et renforcent le récit",
+            "Explorer des scènes variées : **châteaux fantastiques, villes, paysages naturels, intérieurs**, et plus encore"
+          ]
+        },
+        "masters": {
+          "title": "Étudier les maîtres",
+          "content": "Chaque séance comprendra : **observation → imitation → création**. Nous nous inspirerons d'artistes comme **Julia Sarda, Shaun Tan, Moebius, David Hockney, Grant Wood, René Magritte**, en étudiant leur composition, leurs couleurs et leur poésie visuelle."
+        },
+        "projects": {
+          "title": "Mini-projets",
+          "content": "Créer un petit **zine** (livret artistique) - rassembler une série de dessins autour d'un thème et les relier dans un carnet fait main."
+        },
+        "final": {
+          "title": "Projet Final",
+          "content": "Vous réaliserez un **livre illustré de 1 à 4 pages** ou un **journal graphique** : un mini-album poétique pour adultes ou enfants, inspiré, par exemple, du _Petit Prince_ ou d'un carnet illustré moderne. C'est l'occasion de présenter votre imagination et votre style personnel."
+        }
+      }
+    },
     "learningPhilosophy": {
       "title": "Philosophie d'Apprentissage",
       "points": [

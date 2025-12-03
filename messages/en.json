@@ -21,7 +21,44 @@
     "contact": "Contact"
   },
   "course": {
-    "title": "Creative Painting - Telling Your Inner World with Images and Words - Course Outline",
+    "title": "Creative Drawing for Illustration & Picture Books",
+    "intro": {
+      "description": "Starting Feb 2026, I will teach **Creative Drawing for Illustration & Picture Books** at the maison des arts participatifs. This course is a playful, experimental exploration of illustration, designed to help you build your own visual language through lines, shapes, colors, texture, and storytelling.",
+      "whatYouLearn": {
+        "title": "What You'll Learn",
+        "foundations": {
+          "title": "Foundations of Illustration",
+          "content": [
+            "How to use **line, shape, color blocks, distortion, perspective, and texture** to bring life to your drawings",
+            "Drawing people (portraits and full bodies), animals, and elements of nature such as **trees, mountains, clouds, and water**"
+          ]
+        },
+        "medium": {
+          "title": "Work With Any Medium",
+          "content": "Use any materials you love: **pencil, dip pen, watercolor, crayons, acrylic, markers, or digital tools like Procreate.** Your style and medium are entirely your choice."
+        },
+        "story": {
+          "title": "Story + Image",
+          "content": [
+            "Write your own short stories",
+            "Learn how to illustrate a narrative with emotion and clarity",
+            "Draw a variety of common scenes: **fantasy castles, cityscapes, nature landscapes, indoor spaces**, and more"
+          ]
+        },
+        "masters": {
+          "title": "Study from the Masters",
+          "content": "Every class includes: **observation → imitation → creation**. We will learn from illustrators and artists such as **Julia Sarda, Shaun Tan, Moebius, David Hockney, Grant Wood, René Magritte**, exploring how they use composition, color, and visual poetry."
+        },
+        "projects": {
+          "title": "Mini Projects",
+          "content": "Create a small **zine book** - organize a series of drawings around a theme and bind them into a handmade booklet."
+        },
+        "final": {
+          "title": "Final Project",
+          "content": "You will complete a personal **1–4 page picture book** or **graphic journal**—a small-format illustrated story for adults or children, similar to _The Little Prince_ or a modern picture-book essay. It will be a showcase of your imagination and your newly developed illustration voice."
+        }
+      }
+    },
     "learningPhilosophy": {
       "title": "Learning Philosophy",
       "points": [

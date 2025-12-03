@@ -1,6 +1,17 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+// Helper function to render text with bold formatting
+function renderText(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
 export default async function CoursesPage({
   params
 }: {
@@ -30,7 +41,7 @@ export default async function CoursesPage({
       </div>
 
       {/* 课程图片 */}
-      <div className="mb-16">
+      <div className="mb-12">
         <div className="relative w-4/5 aspect-square max-w-2xl mx-auto overflow-hidden rounded-lg bg-gray-50">
           <Image
             src="/images/cup_exercise.jpg"
@@ -42,6 +53,108 @@ export default async function CoursesPage({
           />
         </div>
       </div>
+
+      {/* 课程介绍 */}
+      {t.course.intro && (
+        <section className="mb-20">
+          <div className="prose prose-gray max-w-none mb-12">
+            <p className="text-gray-600 leading-relaxed mb-8">
+              {t.course.intro.description.split('**').map((part: string, i: number) => 
+                i % 2 === 1 ? <strong key={i}>{part}</strong> : part
+              )}
+            </p>
+
+            {t.course.intro.whatYouLearn && (
+              <div className="space-y-8">
+                <h2 className="text-2xl font-medium text-gray-900 mb-6">
+                  {t.course.intro.whatYouLearn.title}
+                </h2>
+
+                {t.course.intro.whatYouLearn.foundations && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">
+                      {t.course.intro.whatYouLearn.foundations.title}
+                    </h3>
+                    <ul className="space-y-2 text-gray-600">
+                      {t.course.intro.whatYouLearn.foundations.content.map((item: string, idx: number) => (
+                        <li key={idx} className="flex items-start">
+                          <span className="text-gray-400 mr-3 mt-1.5">•</span>
+                          <span>{renderText(item)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {t.course.intro.whatYouLearn.medium && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">
+                      {t.course.intro.whatYouLearn.medium.title}
+                    </h3>
+                    <p className="text-gray-600">{renderText(t.course.intro.whatYouLearn.medium.content)}</p>
+                  </div>
+                )}
+
+                {t.course.intro.whatYouLearn.story && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">
+                      {t.course.intro.whatYouLearn.story.title}
+                    </h3>
+                    <ul className="space-y-2 text-gray-600">
+                      {t.course.intro.whatYouLearn.story.content.map((item: string, idx: number) => (
+                        <li key={idx} className="flex items-start">
+                          <span className="text-gray-400 mr-3 mt-1.5">•</span>
+                          <span>{renderText(item)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {t.course.intro.whatYouLearn.masters && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">
+                      {t.course.intro.whatYouLearn.masters.title}
+                    </h3>
+                    <p className="text-gray-600">{renderText(t.course.intro.whatYouLearn.masters.content)}</p>
+                  </div>
+                )}
+
+                {t.course.intro.whatYouLearn.projects && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">
+                      {t.course.intro.whatYouLearn.projects.title}
+                    </h3>
+                    <p className="text-gray-600">{renderText(t.course.intro.whatYouLearn.projects.content)}</p>
+                  </div>
+                )}
+
+                {t.course.intro.whatYouLearn.final && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">
+                      {t.course.intro.whatYouLearn.final.title}
+                    </h3>
+                    <p className="text-gray-600">
+                      {t.course.intro.whatYouLearn.final.content.split(/(\*\*.*?\*\*|_.*?_)/g).map((part: string, i: number) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                          return <strong key={i}>{part.slice(2, -2)}</strong>;
+                        }
+                        if (part.startsWith('_') && part.endsWith('_')) {
+                          return <em key={i}>{part.slice(1, -1)}</em>;
+                        }
+                        return part;
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* 分隔线 */}
+      <div className="border-t border-gray-200 my-16"></div>
 
       {/* 学习理念 */}
       <section className="mb-20 border-b border-gray-100 pb-12">

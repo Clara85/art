@@ -34,9 +34,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# original images (processed images are in public/images/)
-Image_*.jpg
-cat_furless.jpg
-portrait_lady.jpg
-cup_exercise.jpg
+# original images in root directory (processed images are in public/images/)
+/Image_*.jpg
+/cat_furless.jpg
+/portrait_lady.jpg
+/cup_exercise.jpg
 
