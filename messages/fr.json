@@ -1,0 +1,127 @@
+{
+  "home": {
+    "title": "Bienvenue sur la page de Zhang Cheng",
+    "subtitle": "Artiste et Enseignant",
+    "creativePainting": {
+      "title": "Cours de Peinture Créative",
+      "description": "Découvrez l'art de la peinture créative à travers mes cours personnalisés",
+      "button": "Explorer les cours"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "description": "Explorez ma collection d'œuvres d'art et de créations",
+      "button": "Voir les œuvres"
+    }
+  },
+  "nav": {
+    "home": "Accueil",
+    "courses": "Cours",
+    "portfolio": "Portfolio",
+    "about": "À propos",
+    "contact": "Contact"
+  },
+  "course": {
+    "title": "Peinture Créative - Raconter son Monde Intérieur avec des Images et des Mots - Plan de Cours",
+    "learningPhilosophy": {
+      "title": "Philosophie d'Apprentissage",
+      "points": [
+        "Du simple au complexe puis au simple : Apprendre à créer de la complexité, voir les détails, puis apprendre à simplifier",
+        "La création de livre texte et image (picture book) se fera simultanément",
+        "Concevoir un zine book",
+        "Comment rendre le texte simple et clair, comment combiner texte et image",
+        "Pour qui écrivez-vous ? Est-ce assez simple et clair ?",
+        "Méthodes de mise en page pour le texte et l'image",
+        "Créer un dummy book"
+      ]
+    },
+    "lessons": [
+      {
+        "number": 1,
+        "title": "Comment exprimer les objets ?",
+        "content": [
+          "Ligne, surface, épaisseur, ombre",
+          "Dessiner d'abord la grande structure, puis les détails",
+          "Changer les angles d'observation : Dessiner différents côtés d'un objet, retourner la toile pour surmonter les erreurs de l'œil humain",
+          "Améliorer la précision du contrôle du crayon",
+          "Devoir : Observer attentivement les différents matériaux autour de vous"
+        ]
+      },
+      {
+        "number": 2,
+        "title": "De l'inspiration au thumbnail, création de storyboard, design de texture",
+        "content": [
+          "Composition, angles",
+          "Créer de l'intérêt : Contraste de taille entre personnages, scènes et objets",
+          "Design de texture, comment combiner texture et ombres, comment combiner blocs de couleur et lignes. Par exemple, quelle est la différence entre un pull et la peau dans les zones sombres et claires"
+        ]
+      },
+      {
+        "number": 3,
+        "title": "Comment dessiner les personnages :",
+        "content": [
+          "Corps humain : Proportion, coordination, simplification",
+          "Visage : Face avant, profil, yeux, etc. Comment faire pour que ça ressemble à une personne",
+          "Essayer de dessiner sous différents angles",
+          "Expression des émotions faciales"
+        ]
+      },
+      {
+        "number": 4,
+        "title": "Comment dessiner les mains et les pieds humains :",
+        "content": [
+          "À quoi ressemblent vraiment les ongles ?",
+          "Comment utiliser des blocs pour résumer les formes 3D des mains",
+          "De quelle couleur est vraiment la peau ?"
+        ]
+      },
+      {
+        "number": 5,
+        "title": "Comment dessiner les petits animaux :",
+        "content": [
+          "Observer les caractéristiques physiques des petits animaux",
+          "Essayer d'utiliser différents matériaux : crayon, aquarelle, crayon de couleur, pastel, etc."
+        ]
+      },
+      {
+        "number": 6,
+        "title": "Comment dessiner la nature de la manière la plus simple ?",
+        "content": [
+          "Par exemple, montagnes, neige, arbres, bâtiments, lacs, reflets",
+          "Quels matériaux conviennent pour exprimer la nature ?"
+        ]
+      },
+      {
+        "number": 7,
+        "title": "Couleur : Connaître toutes les couleurs et comprendre leurs scénarios d'utilisation spécifiques",
+        "content": [
+          "Connaissances de base sur les couleurs, comme les couleurs complémentaires, comment mélanger le noir, les couleurs chaudes et froides, etc.",
+          "Utilisations des couleurs à saturation élevée et faible",
+          "Concevoir vos combinaisons et schémas de couleurs préférés"
+        ]
+      },
+      {
+        "number": 8,
+        "title": "Perspective et couches d'image :",
+        "content": [
+          "Perspective à 1, 2, 3 points",
+          "Applications spécifiques de la perspective, comme comment dessiner des routes courbes, des corps humains dans des images en perspective",
+          "Autres options sans apprendre la perspective : Comment créer un sentiment de couches ? Beaucoup d'illustrateurs ne dessinent pas la perspective. Il suffit de dessiner grand près et petit loin"
+        ]
+      },
+      {
+        "number": 9,
+        "title": "Comment exprimer l'intérêt et la narration de l'image",
+        "content": [
+          "Combiner des objets non liés pour ajouter de l'intérêt aux images",
+          "Déformer les corps humains ou les objets pour exprimer la narration"
+        ]
+      },
+      {
+        "number": 10,
+        "title": "Présentation du Projet",
+        "content": []
+      }
+    ]
+  }
+}
+

@@ -1,0 +1,127 @@
+{
+  "home": {
+    "title": "Welcome to Zhang Cheng's Homepage",
+    "subtitle": "Artist and Teacher",
+    "creativePainting": {
+      "title": "Creative Painting Courses",
+      "description": "Discover the art of creative painting through my personalized courses",
+      "button": "Explore Courses"
+    },
+    "portfolio": {
+      "title": "Portfolio",
+      "description": "Explore my collection of artworks and creations",
+      "button": "View Works"
+    }
+  },
+  "nav": {
+    "home": "Home",
+    "courses": "Courses",
+    "portfolio": "Portfolio",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "course": {
+    "title": "Creative Painting - Telling Your Inner World with Images and Words - Course Outline",
+    "learningPhilosophy": {
+      "title": "Learning Philosophy",
+      "points": [
+        "From simple to complex to simple: Learn how to create complexity, see details, then learn to simplify",
+        "Text and picture book creation will proceed simultaneously",
+        "Design a zine book",
+        "How to make text simple and clear, how to combine text with images",
+        "Who are you writing for? Is it simple and clear enough?",
+        "Layout methods for text and images",
+        "Create a dummy book"
+      ]
+    },
+    "lessons": [
+      {
+        "number": 1,
+        "title": "How to express objects?",
+        "content": [
+          "Lines, surfaces, thickness, shadows",
+          "Draw the large structure first, then the details",
+          "Change observation angles: Draw different sides of an object, flip the canvas to overcome human eye errors",
+          "Improve pen control accuracy",
+          "Assignment: Observe various materials around you"
+        ]
+      },
+      {
+        "number": 2,
+        "title": "From inspiration to thumbnail, storyboard creation, texture design",
+        "content": [
+          "Composition, angles",
+          "Create interest: Size contrast of characters, scenes, and objects",
+          "Texture design, how to combine texture with shadows, how to combine color blocks with lines. For example, what's the difference between a sweater and skin in dark and light areas"
+        ]
+      },
+      {
+        "number": 3,
+        "title": "How to draw people:",
+        "content": [
+          "Human body: Proportion, coordination, simplification",
+          "Face: Front face, side face, eyes, etc. How to make it look like a person",
+          "Try drawing from different angles",
+          "Facial emotion expression"
+        ]
+      },
+      {
+        "number": 4,
+        "title": "How to draw human hands and feet:",
+        "content": [
+          "What do nails actually look like?",
+          "How to use blocks to summarize 3D hand shapes",
+          "What color is skin actually?"
+        ]
+      },
+      {
+        "number": 5,
+        "title": "How to draw small animals:",
+        "content": [
+          "Observe the physical characteristics of small animals",
+          "Try using different materials: pencil, watercolor, colored pencil, crayon, etc."
+        ]
+      },
+      {
+        "number": 6,
+        "title": "How to draw nature in the simplest way?",
+        "content": [
+          "For example, mountains, snow, trees, buildings, lakes, reflections",
+          "What materials are suitable for expressing nature?"
+        ]
+      },
+      {
+        "number": 7,
+        "title": "Color: Understand all colors and their specific usage scenarios",
+        "content": [
+          "Basic color knowledge, such as complementary colors, how to mix black, warm and cool colors, etc.",
+          "Uses of high saturation and low saturation colors",
+          "Design your favorite color combinations and color schemes"
+        ]
+      },
+      {
+        "number": 8,
+        "title": "Perspective and picture layers:",
+        "content": [
+          "1, 2, 3 point perspective",
+          "Specific applications of perspective, such as how to draw curved roads, human bodies in perspective images",
+          "Other options without learning perspective: How to create a sense of layers? Many illustrators don't draw perspective. Just draw near large and far small"
+        ]
+      },
+      {
+        "number": 9,
+        "title": "How to express picture interest and storytelling",
+        "content": [
+          "Combine unrelated objects to add interest to images",
+          "Deform human bodies or objects to express storytelling"
+        ]
+      },
+      {
+        "number": 10,
+        "title": "Project Presentation",
+        "content": []
+      }
+    ]
+  }
+}
+
