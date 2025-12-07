@@ -356,7 +356,9 @@
         heartScale: 0.35,
         targetRadius: 30,
         archerHoldTime: 120, 
-        fingerDanceDuration: 180,
+        fingerDanceDuration: 600, // 总时间10秒（60fps * 10）
+        fingerDanceHoldTime: 900, // 保持手势的时间15秒（60fps * 15）
+        fingerDanceCooldown: 60, // 成功后的冷却时间（1秒）
         autoStartThreshold: 90,
         colors: {
             bg: '#0f172a',
@@ -382,6 +384,9 @@
         particles: [],
         archerTimer: 0,
         fingerTimer: 0,
+        fingerCooldown: 0, // 手势操冷却时间
+        fingerHoldTimer: 0, // 保持手势的计时器
+        fingerGestureConfirmed: false, // 是否已确认手势正确
         targetGestureKey: null,
         flashMsg: "",
         flashTimer: 0,
@@ -493,6 +498,9 @@
         state.targets = [];
         state.archerTimer = 0;
         state.fingerTimer = 0;
+        state.fingerCooldown = 0;
+        state.fingerHoldTimer = 0;
+        state.fingerGestureConfirmed = false;
 
         if (phase === PHASE_HEART) {
             if (stageBadgeEl) stageBadgeEl.innerText = "1/4";
@@ -586,6 +594,8 @@
         const keys = Object.keys(GESTURES);
         state.targetGestureKey = keys[Math.floor(Math.random() * keys.length)];
         state.fingerTimer = config.fingerDanceDuration;
+        state.fingerHoldTimer = 0;
+        state.fingerGestureConfirmed = false;
     }
 
     function spawnCrusherTargets() {
@@ -665,29 +675,84 @@
             }
         }
         else if (state.currentPhase === PHASE_FINGER_DANCE) {
-            if (!state.targetGestureKey) return;
+            // 处理冷却时间
+            if (state.fingerCooldown > 0) {
+                state.fingerCooldown--;
+                // 冷却时间结束时，生成新目标
+                if (state.fingerCooldown === 0 && state.currentPhase === PHASE_FINGER_DANCE) {
+                    spawnFingerTarget();
+                }
+                return; // 冷却期间不检测手势
+            }
+            
+            if (!state.targetGestureKey) {
+                spawnFingerTarget();
+                return;
+            }
+            
             state.fingerTimer--;
 
+            // 检测双手是否都做出了正确的手势
             let correctCount = 0;
             state.hands.forEach(h => {
                 if (h.gesture === state.targetGestureKey) correctCount++;
             });
 
             if (correctCount >= 2) {
-                state.score += 200;
-                state.phaseProgress++;
-                createParticles(state.width/2, state.height/2, GESTURES[state.targetGestureKey].color, 60);
-                showFlashMsg(t.great);
-                checkPhaseCompletion();
-                if (state.currentPhase === PHASE_FINGER_DANCE) {
-                    spawnFingerTarget();
+                // 如果手势正确但还未确认，先确认手势
+                if (!state.fingerGestureConfirmed) {
+                    state.fingerGestureConfirmed = true;
+                    state.fingerHoldTimer = 0;
+                    showFlashMsg(t.great); // 显示确认消息
+                } else {
+                    // 已确认，开始计时保持时间
+                    state.fingerHoldTimer++;
+                    
+                    // 更新提示信息，显示保持进度
+                    const holdProgress = (state.fingerHoldTimer / config.fingerDanceHoldTime * 100).toFixed(0);
+                    if (instructionEl) {
+                        instructionEl.innerHTML = `${t.makeGesture} <span style="color:${GESTURES[state.targetGestureKey].color}; font-size: 1.2em;">${GESTURES[state.targetGestureKey].label} ${GESTURES[state.targetGestureKey].emoji}</span><br><span style="color:#10b981; font-size: 0.9em;">保持中... ${holdProgress}%</span>`;
+                    }
+                    
+                    // 保持时间达到要求，成功
+                    if (state.fingerHoldTimer >= config.fingerDanceHoldTime) {
+                        state.score += 200;
+                        state.phaseProgress++;
+                        createParticles(state.width/2, state.height/2, GESTURES[state.targetGestureKey].color, 60);
+                        showFlashMsg(t.great);
+                        checkPhaseCompletion();
+                        if (state.currentPhase === PHASE_FINGER_DANCE) {
+                            // 设置冷却时间，延迟生成新目标
+                            state.fingerCooldown = config.fingerDanceCooldown;
+                            state.fingerTimer = config.fingerDanceDuration; // 重置计时器
+                            state.targetGestureKey = null; // 清除当前目标，等待冷却后生成新的
+                            state.fingerGestureConfirmed = false;
+                            state.fingerHoldTimer = 0;
+                        }
+                    }
                 }
-            } 
-            else if (state.fingerTimer <= 0) {
-                state.score -= 50;
-                createParticles(state.width/2, state.height/2, '#ef4444', 10);
-                if (instructionEl) instructionEl.innerHTML = t.tooSlow;
-                spawnFingerTarget();
+            } else {
+                // 手势不正确
+                if (state.fingerGestureConfirmed) {
+                    // 如果之前已确认，现在手势不对，重置状态
+                    state.fingerGestureConfirmed = false;
+                    state.fingerHoldTimer = 0;
+                    if (instructionEl) {
+                        instructionEl.innerHTML = `${t.makeGesture} <span style="color:${GESTURES[state.targetGestureKey].color}; font-size: 1.2em;">${GESTURES[state.targetGestureKey].label} ${GESTURES[state.targetGestureKey].emoji}</span>`;
+                    }
+                }
+                
+                // 超时处理
+                if (state.fingerTimer <= 0) {
+                    state.score -= 50;
+                    createParticles(state.width/2, state.height/2, '#ef4444', 10);
+                    if (instructionEl) instructionEl.innerHTML = t.tooSlow;
+                    // 设置冷却时间
+                    state.fingerCooldown = config.fingerDanceCooldown;
+                    state.targetGestureKey = null; // 清除当前目标，等待冷却后生成新的
+                    state.fingerGestureConfirmed = false;
+                    state.fingerHoldTimer = 0;
+                }
             }
         }
         else if (state.currentPhase === PHASE_CRUSHER) {
@@ -775,10 +840,22 @@
         const cx = state.width / 2;
         const cy = state.height / 2;
 
-        const pct = state.fingerTimer / config.fingerDanceDuration;
+        // 如果手势已确认，显示保持进度；否则显示倒计时
+        let pct;
+        let strokeColor = gesture.color;
+        
+        if (state.fingerGestureConfirmed) {
+            // 显示保持进度（从0到100%）
+            pct = state.fingerHoldTimer / config.fingerDanceHoldTime;
+            strokeColor = '#10b981'; // 绿色表示保持中
+        } else {
+            // 显示倒计时
+            pct = state.fingerTimer / config.fingerDanceDuration;
+        }
+        
         ctx.beginPath();
         ctx.arc(cx, cy, 120, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct);
-        ctx.strokeStyle = gesture.color;
+        ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 15;
         ctx.lineCap = 'round';
         ctx.stroke();
@@ -791,8 +868,16 @@
         
         ctx.font = "30px 'Segoe UI'";
         ctx.fillText(gesture.label, cx, cy + 60);
+        
+        // 如果已确认，在下方显示保持进度百分比
+        if (state.fingerGestureConfirmed) {
+            const holdProgress = (state.fingerHoldTimer / config.fingerDanceHoldTime * 100).toFixed(0);
+            ctx.fillStyle = "#10b981";
+            ctx.font = "bold 24px 'Segoe UI'";
+            ctx.fillText(`${holdProgress}%`, cx, cy + 100);
+        }
 
-        if (instructionEl) instructionEl.innerHTML = `${t.makeGesture} <span style="color:${gesture.color}; font-size: 1.2em;">${gesture.label} ${gesture.emoji}</span>`;
+        // 指令文本在update函数中更新，这里不需要重复更新
     }
 
     function drawHeartPath() {
