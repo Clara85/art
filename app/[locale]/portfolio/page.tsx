@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
 
 export default async function PortfolioPage({
   params
@@ -7,7 +8,7 @@ export default async function PortfolioPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await import(`@/messages/${locale}.json`).then(m => m.default);
+  const t = await getTranslations('home');
 
   const portfolioImages = [
     { src: '/images/cat_furless.jpg', alt: 'Cat Furless' },
@@ -31,10 +32,10 @@ export default async function PortfolioPage({
       {/* 页面标题 */}
       <div className="mb-12">
         <h1 className="text-3xl md:text-4xl font-light text-gray-900 mb-3">
-          {t.home.portfolio.title}
+          {t('portfolio.title')}
         </h1>
         <p className="text-lg text-gray-500">
-          {t.home.portfolio.description}
+          {t('portfolio.description')}
         </p>
       </div>
 

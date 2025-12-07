@@ -11,6 +11,11 @@
       "title": "Portfolio",
       "description": "Explorez ma collection d'œuvres d'art et de créations",
       "button": "Voir les œuvres"
+    },
+    "interactiveGames": {
+      "title": "Jeux Interactifs de Gestes",
+      "description": "Découvrez des jeux de fitness corporel avec 6 niveaux de défi : Échauffement Cœur, Archer Galaxie, Sceau Étoile, Broyeur de Météores, Tranche de Fruits et Dessin de Gestes",
+      "button": "Commencer"
     }
   },
   "nav": {

@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">星际健身房 - 自动启动版</title>
+    <script>
+        // 先加载翻译，在页面加载前设置标题
+        (function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const langParam = urlParams.get('lang');
+            const browserLang = navigator.language.split('-')[0];
+            let tempLang = 'zh'; // 默认中文
+            
+            // 优先使用 URL 参数
+            if (langParam === 'zh' || langParam === 'fr' || langParam === 'en') {
+                tempLang = langParam;
+            } else if (browserLang === 'zh' || browserLang === 'fr' || browserLang === 'en') {
+                tempLang = browserLang;
+            }
+            
+            const tempTitles = {
+                zh: "星际健身房 - 自动启动版",
+                fr: "Gymnase Spatial - Démarrage Automatique",
+                en: "Space Gym - Auto Start"
+            };
+            document.title = tempTitles[tempLang] || tempTitles.zh;
+        })();
+    </script>
+    <!-- Tailwind CSS removed - using inline styles instead -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #0f172a 0%, #000000 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        #video-preview {
+            position: absolute; bottom: 20px; left: 20px; width: 200px; height: 150px;
+            border-radius: 12px; border: 3px solid rgba(59, 130, 246, 0.5);
+            transform: scaleX(-1); opacity: 0.9; z-index: 10; object-fit: cover; background: #000;
+        }
+
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 20;
+        }
+
+        .hud { position: absolute; top: 30px; right: 30px; text-align: right; }
+        .hud-score {
+            color: #60a5fa; font-size: 48px; font-weight: 900;
+            text-shadow: 0 0 20px rgba(96, 165, 250, 0.6); line-height: 1;
+        }
+        .hud-label { color: #94a3b8; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+
+        .phase-indicator {
+            position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 30px; border-radius: 50px; color: #fff;
+            font-size: 20px; font-weight: bold; display: flex; align-items: center; gap: 10px;
+            backdrop-filter: blur(5px); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .stage-badge { background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 14px; margin-right: 5px; }
+
+        .center-msg {
+            background: rgba(15, 23, 42, 0.95); padding: 50px; border-radius: 30px;
+            border: 2px solid #3b82f6; text-align: center; pointer-events: auto;
+            box-shadow: 0 0 60px rgba(59, 130, 246, 0.3); max-width: 600px; width: 90%;
+            transition: opacity 0.5s;
+        }
+
+        .status-indicator {
+            background: rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            border: 2px solid #475569;
+            padding: 18px 50px;
+            font-size: 24px;
+            border-radius: 60px;
+            margin-top: 30px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .status-indicator.ready {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-color: #10b981;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        #instruction-text {
+            position: absolute; bottom: 40px; width: 100%; text-align: center;
+            color: rgba(255, 255, 255, 0.9); font-size: 24px; font-weight: bold;
+            pointer-events: none; text-shadow: 0 2px 10px rgba(0,0,0,0.8); transition: all 0.3s;
+        }
+        
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #93c5fd; }
+        #skip-hint { position: absolute; bottom: 10px; right: 10px; color: rgba(255,255,255,0.3); font-size: 12px; pointer-events: none; }
+        .hidden { display: none !important; opacity: 0; pointer-events: none; }
+        
+        /* 替代 Tailwind 类的样式 */
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .font-bold { font-weight: 700; }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .text-6xl { font-size: 3.75rem; line-height: 1; }
+        .font-black { font-weight: 900; }
+        .text-transparent { color: transparent; }
+        .bg-clip-text { -webkit-background-clip: text; background-clip: text; }
+        .bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops)); }
+        .from-blue-400 { --tw-gradient-from: #60a5fa; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(96, 165, 250, 0)); }
+        .to-purple-500 { --tw-gradient-to: #a855f7; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-gray-300 { color: #d1d5db; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .leading-relaxed { line-height: 1.625; }
+        .text-left { text-align: left; }
+        .pl-8 { padding-left: 2rem; }
+        .text-yellow-400 { color: #facc15; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <video id="input-video" class="hidden" playsinline></video>
+    <canvas id="video-preview"></canvas>
+    <canvas id="game-canvas"></canvas>
+
+    <div class="phase-indicator">
+        <span class="stage-badge" id="stage-badge">1/4</span>
+        <span id="phase-icon">❤️</span>
+        <span id="phase-text"></span>
+    </div>
+
+    <div class="hud">
+        <div class="hud-score" id="score-el">0</div>
+        <div class="hud-label">ENERGY</div>
+    </div>
+
+    <div id="instruction-text"></div>
+    <div id="skip-hint"></div>
+
+    <div id="loading" class="ui-layer">
+        <div style="font-size: 1.5rem; font-weight: 700; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;" id="loading-text"></div>
+    </div>
+
+    <div id="menu" class="ui-layer hidden">
+        <div class="center-msg">
+            <h1 style="font-size: 3.75rem; font-weight: 900; background: linear-gradient(to right, #60a5fa, #a855f7); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 1rem; line-height: 1;" id="game-title"></h1>
+            <p style="color: #d1d5db; font-size: 1.125rem; margin-bottom: 2rem; line-height: 1.625; text-align: left; padding-left: 2rem;" id="menu-desc"></p>
+            <div id="hand-status" style="color: #facc15; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; margin-bottom: 1rem; font-size: 1.25rem;"></div>
+            <div id="start-indicator" class="status-indicator"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 多语言支持 ---
+    const translations = {
+        zh: {
+            title: "星际健身房 - 自动启动版",
+            gameTitle: "星际健身房",
+            loading: "正在启动健身引擎...",
+            menuDesc: "全身体感健身游戏，含最新手掌操：",
+            phase1: "爱心热身",
+            phase1Desc: "(手臂大回环)",
+            phase2: "银河射手",
+            phase2Desc: "(极限扩胸)",
+            phase3: "星际结印",
+            phase3Desc: "(反应力手掌操)",
+            phase4: "陨石粉碎",
+            phase4Desc: "(握力爆发)",
+            raiseHands: "请举起双手出现在屏幕中",
+            waitingCamera: "等待摄像头...",
+            detecting: "检测中...",
+            detectedHands: "检测到双手！游戏即将开始...",
+            detectedHand: "检测到 {count} 只手",
+            needTwoHands: "检测到 1 只手，需要 2 只手",
+            phase1Name: "爱心热身",
+            phase1Instruction: "双臂大回环，点亮所有光点！",
+            phase2Name: "银河射手",
+            phase2Instruction: "左右手分别拉到屏幕最边缘，<span class='text-yellow-400'>保持住！</span>",
+            phase2Hold: "保持住！蓄力中...",
+            phase2Pull: "两手拉到最边上！",
+            phase3Name: "星际结印",
+            phase3Instruction: "反应训练：双手同时做出屏幕上的手势！",
+            phase4Name: "陨石粉碎",
+            phase4Instruction: "移动到陨石上，用力<span class='text-red-400'>握紧拳头</span>捏碎它！",
+            skipHint: "按 [空格键] 跳过当前关卡",
+            skipLevel: "跳过关卡！",
+            warmupComplete: "热身完成！准备拉弓！",
+            archerComplete: "扩胸完成！准备手掌操！",
+            fingerComplete: "手指很灵活！准备碎石！",
+            crusherComplete: "太强了！再来一轮！",
+            energyShot: "能量发射！",
+            great: "太棒了！",
+            tooSlow: "太慢了！再试一次！",
+            makeGesture: "双手做出:",
+            crush: "✊ 握碎!",
+            gestures: {
+                OPEN: "布",
+                FIST: "石头",
+                VICTORY: "剪刀",
+                THUMB_UP: "点赞"
+            }
+        },
+        fr: {
+            title: "Gymnase Spatial - Démarrage Automatique",
+            gameTitle: "Gymnase Spatial",
+            loading: "Démarrage du moteur de fitness...",
+            menuDesc: "Jeux de fitness corporel avec gestes de la main :",
+            phase1: "Échauffement Cœur",
+            phase1Desc: "(Grands cercles avec les bras)",
+            phase2: "Archer Galaxie",
+            phase2Desc: "(Extension maximale de la poitrine)",
+            phase3: "Sceau Étoile",
+            phase3Desc: "(Entraînement de réaction avec les mains)",
+            phase4: "Broyeur de Météores",
+            phase4Desc: "(Explosion de force de préhension)",
+            raiseHands: "Veuillez lever les deux mains devant l'écran",
+            waitingCamera: "En attente de la caméra...",
+            detecting: "Détection en cours...",
+            detectedHands: "Deux mains détectées ! Le jeu va commencer...",
+            detectedHand: "{count} main(s) détectée(s)",
+            needTwoHands: "1 main détectée, 2 mains nécessaires",
+            phase1Name: "Échauffement Cœur",
+            phase1Instruction: "Faites de grands cercles avec les bras pour allumer tous les points lumineux !",
+            phase2Name: "Archer Galaxie",
+            phase2Instruction: "Tirez les deux mains vers les bords de l'écran et <span class='text-yellow-400'>maintenez !</span>",
+            phase2Hold: "Maintenez ! Chargement...",
+            phase2Pull: "Tirez les deux mains vers les bords !",
+            phase3Name: "Sceau Étoile",
+            phase3Instruction: "Entraînement de réaction : Faites le geste affiché avec les deux mains simultanément !",
+            phase4Name: "Broyeur de Météores",
+            phase4Instruction: "Déplacez-vous vers les météores et <span class='text-red-400'>serrez le poing</span> pour les écraser !",
+            skipHint: "Appuyez sur [Espace] pour passer le niveau",
+            skipLevel: "Niveau sauté !",
+            warmupComplete: "Échauffement terminé ! Préparez-vous à tirer !",
+            archerComplete: "Extension terminée ! Préparez-vous aux gestes !",
+            fingerComplete: "Doigts très agiles ! Préparez-vous à écraser !",
+            crusherComplete: "Trop fort ! Nouveau tour !",
+            energyShot: "Tir d'énergie !",
+            great: "Excellent !",
+            tooSlow: "Trop lent ! Réessayez !",
+            makeGesture: "Faites le geste avec les deux mains :",
+            crush: "✊ Écrasez !",
+            gestures: {
+                OPEN: "Paume",
+                FIST: "Poing",
+                VICTORY: "V",
+                THUMB_UP: "Pouce"
+            }
+        },
+        en: {
+            title: "Space Gym - Auto Start",
+            gameTitle: "Space Gym",
+            loading: "Starting fitness engine...",
+            menuDesc: "Full-body fitness games with hand gestures:",
+            phase1: "Heart Warm-up",
+            phase1Desc: "(Arm circles)",
+            phase2: "Galaxy Archer",
+            phase2Desc: "(Maximum chest expansion)",
+            phase3: "Star Seal",
+            phase3Desc: "(Reaction training with hands)",
+            phase4: "Meteor Crusher",
+            phase4Desc: "(Grip strength burst)",
+            raiseHands: "Please raise both hands in front of the screen",
+            waitingCamera: "Waiting for camera...",
+            detecting: "Detecting...",
+            detectedHands: "Two hands detected! Game will start soon...",
+            detectedHand: "{count} hand(s) detected",
+            needTwoHands: "1 hand detected, 2 hands needed",
+            phase1Name: "Heart Warm-up",
+            phase1Instruction: "Make big arm circles to light up all the points!",
+            phase2Name: "Galaxy Archer",
+            phase2Instruction: "Pull both hands to the edges of the screen and <span class='text-yellow-400'>hold!</span>",
+            phase2Hold: "Hold! Charging...",
+            phase2Pull: "Pull both hands to the edges!",
+            phase3Name: "Star Seal",
+            phase3Instruction: "Reaction training: Make the gesture shown on screen with both hands simultaneously!",
+            phase4Name: "Meteor Crusher",
+            phase4Instruction: "Move to the meteors and <span class='text-red-400'>clench your fist</span> to crush them!",
+            skipHint: "Press [Space] to skip the current level",
+            skipLevel: "Level skipped!",
+            warmupComplete: "Warm-up complete! Prepare to draw!",
+            archerComplete: "Expansion complete! Prepare for hand gestures!",
+            fingerComplete: "Very agile fingers! Prepare to crush!",
+            crusherComplete: "Too strong! Another round!",
+            energyShot: "Energy shot!",
+            great: "Great!",
+            tooSlow: "Too slow! Try again!",
+            makeGesture: "Make gesture with both hands:",
+            crush: "✊ Crush!",
+            gestures: {
+                OPEN: "Palm",
+                FIST: "Fist",
+                VICTORY: "V",
+                THUMB_UP: "Thumb"
+            }
+        }
+    };
+
+    // 检测语言
+    function getLanguage() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const langParam = urlParams.get('lang');
+        if (langParam && translations[langParam]) return langParam;
+        
+        const browserLang = navigator.language.split('-')[0];
+        if (translations[browserLang]) return browserLang;
+        
+        return 'zh'; // 默认中文
+    }
+
+    const lang = getLanguage();
+    const t = translations[lang];
+
+    // --- 游戏状态常量 ---
+    const PHASE_HEART = 'PHASE_HEART';
+    const PHASE_ARCHER = 'PHASE_ARCHER';
+    const PHASE_FINGER_DANCE = 'PHASE_FINGER_DANCE';
+    const PHASE_CRUSHER = 'PHASE_CRUSHER';
+
+    const GESTURES = {
+        OPEN: { emoji: '✋', label: t.gestures.OPEN, color: '#60a5fa' },
+        FIST: { emoji: '✊', label: t.gestures.FIST, color: '#f472b6' },
+        VICTORY: { emoji: '✌️', label: t.gestures.VICTORY, color: '#34d399' },
+        THUMB_UP: { emoji: '👍', label: t.gestures.THUMB_UP, color: '#fbbf24' }
+    };
+
+    const config = {
+        heartScale: 0.35,
+        targetRadius: 30,
+        archerHoldTime: 120, 
+        fingerDanceDuration: 180,
+        autoStartThreshold: 90,
+        colors: {
+            bg: '#0f172a',
+            leftHand: '#60a5fa', 
+            rightHand: '#f472b6', 
+            archerBeam: '#fbbf24', 
+            crusherRock: '#9ca3af'
+        }
+    };
+
+    const state = {
+        isPlaying: false,
+        score: 0,
+        width: 0,
+        height: 0,
+        videoWidth: 1280,
+        videoHeight: 720,
+        videoAspectRatio: 1280 / 720,
+        hands: [],
+        currentPhase: PHASE_HEART,
+        phaseProgress: 0,
+        targets: [], 
+        particles: [],
+        archerTimer: 0,
+        fingerTimer: 0,
+        targetGestureKey: null,
+        flashMsg: "",
+        flashTimer: 0,
+        autoStartTimer: 0
+    };
+
+    // --- DOM ---
+    // 确保DOM已加载
+    function getElement(id) {
+        const el = document.getElementById(id);
+        if (!el) {
+            console.warn(`Element ${id} not found`);
+        }
+        return el;
+    }
+    
+    const canvas = getElement('game-canvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    const previewCanvas = getElement('video-preview');
+    const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
+    const videoElement = getElement('input-video');
+    const loadingScreen = getElement('loading');
+    const menuScreen = getElement('menu');
+    const startIndicator = getElement('start-indicator');
+    const scoreEl = getElement('score-el');
+    const phaseTextEl = getElement('phase-text');
+    const phaseIconEl = getElement('phase-icon');
+    const stageBadgeEl = getElement('stage-badge');
+    const instructionEl = getElement('instruction-text');
+    const handStatusEl = getElement('hand-status');
+    
+    // 检查关键元素
+    if (!canvas || !ctx) {
+        console.error('Canvas not found!');
+    }
+
+    // --- 辅助数学 ---
+    function getHeartCoordinates(t, scale, cx, cy) {
+        const hx = 16 * Math.pow(Math.sin(t), 3);
+        const hy = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+        return { x: cx + hx * scale, y: cy + hy * scale };
+    }
+
+    // --- 核心手势检测算法 ---
+    function detectGesture(landmarks) {
+        const wrist = landmarks[0];
+        
+        function isExtended(tipIdx, pipIdx) {
+            const distTip = Math.hypot(landmarks[tipIdx].x - wrist.x, landmarks[tipIdx].y - wrist.y);
+            const distPip = Math.hypot(landmarks[pipIdx].x - wrist.x, landmarks[pipIdx].y - wrist.y);
+            return distTip > distPip * 1.1;
+        }
+
+        // 拇指检测：拇指是横向移动的，需要特殊处理
+        // 检查拇指尖（4）相对于拇指关节（3）的位置
+        function isThumbExtended() {
+            const thumbTip = landmarks[4];
+            const thumbIp = landmarks[3];  // 拇指指间关节
+            const thumbMcp = landmarks[2]; // 拇指掌指关节
+            
+            // 计算拇指尖到关节的距离
+            const distTipToIp = Math.hypot(thumbTip.x - thumbIp.x, thumbTip.y - thumbIp.y);
+            const distIpToMcp = Math.hypot(thumbIp.x - thumbMcp.x, thumbIp.y - thumbMcp.y);
+            
+            // 如果拇指尖距离关节足够远，说明拇指伸出
+            // 同时检查拇指尖是否在手掌外侧（向上）
+            return distTipToIp > distIpToMcp * 0.8 && thumbTip.y < thumbIp.y;
+        }
+
+        const thumb   = isThumbExtended();
+        const index   = isExtended(8, 5);
+        const middle  = isExtended(12, 9);
+        const ring    = isExtended(16, 13);
+        const pinky   = isExtended(20, 17);
+
+        // 先检查FIST（所有手指都收起），避免误判
+        if (!index && !middle && !ring && !pinky && !thumb) return 'FIST';
+        // 然后检查THUMB_UP（只有拇指伸出）
+        if (thumb && !index && !middle && !ring && !pinky) return 'THUMB_UP';
+        // 检查VICTORY（食指和中指伸出）
+        if (index && middle && !ring && !pinky) return 'VICTORY';
+        // 检查OPEN（所有手指都伸出）
+        if (index && middle && ring && pinky) return 'OPEN';
+
+        return 'UNKNOWN';
+    }
+
+    // --- 游戏流程控制 ---
+    function startGame() {
+        if (state.isPlaying) return;
+        state.isPlaying = true;
+        menuScreen.classList.add('hidden');
+        switchPhase(PHASE_HEART);
+        gameLoop();
+    }
+
+    function gameLoop() {
+        if (!state.isPlaying) {
+            draw(); // 即使游戏未开始也要绘制菜单
+            return;
+        }
+        update();
+        draw();
+    }
+
+    function switchPhase(phase) {
+        state.currentPhase = phase;
+        state.phaseProgress = 0;
+        state.targets = [];
+        state.archerTimer = 0;
+        state.fingerTimer = 0;
+
+        if (phase === PHASE_HEART) {
+            if (stageBadgeEl) stageBadgeEl.innerText = "1/4";
+            if (phaseTextEl) phaseTextEl.innerText = t.phase1Name;
+            if (phaseIconEl) phaseIconEl.innerText = "❤️";
+            if (instructionEl) instructionEl.innerHTML = t.phase1Instruction;
+            spawnHeartTargets();
+        } else if (phase === PHASE_ARCHER) {
+            if (stageBadgeEl) stageBadgeEl.innerText = "2/4";
+            if (phaseTextEl) phaseTextEl.innerText = t.phase2Name;
+            if (phaseIconEl) phaseIconEl.innerText = "🏹";
+            if (instructionEl) instructionEl.innerHTML = t.phase2Instruction;
+            spawnArcherTargets();
+        } else if (phase === PHASE_FINGER_DANCE) {
+            if (stageBadgeEl) stageBadgeEl.innerText = "3/4";
+            if (phaseTextEl) phaseTextEl.innerText = t.phase3Name;
+            if (phaseIconEl) phaseIconEl.innerText = "✨";
+            if (instructionEl) instructionEl.innerHTML = t.phase3Instruction;
+            spawnFingerTarget();
+        } else if (phase === PHASE_CRUSHER) {
+            if (stageBadgeEl) stageBadgeEl.innerText = "4/4";
+            if (phaseTextEl) phaseTextEl.innerText = t.phase4Name;
+            if (phaseIconEl) phaseIconEl.innerText = "👊";
+            if (instructionEl) instructionEl.innerHTML = t.phase4Instruction;
+            spawnCrusherTargets();
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if(e.code === 'Space' && state.isPlaying) {
+            forceNextLevel();
+        }
+    });
+
+    function forceNextLevel() {
+        if(state.currentPhase === PHASE_HEART) switchPhase(PHASE_ARCHER);
+        else if(state.currentPhase === PHASE_ARCHER) switchPhase(PHASE_FINGER_DANCE);
+        else if(state.currentPhase === PHASE_FINGER_DANCE) switchPhase(PHASE_CRUSHER);
+        else switchPhase(PHASE_HEART);
+        showFlashMsg(t.skipLevel);
+    }
+
+    function checkPhaseCompletion() {
+        if (state.currentPhase === PHASE_HEART && state.phaseProgress >= 1) {
+            showFlashMsg(t.warmupComplete);
+            setTimeout(() => switchPhase(PHASE_ARCHER), 2000);
+        } 
+        else if (state.currentPhase === PHASE_ARCHER && state.phaseProgress >= 2) {
+            showFlashMsg(t.archerComplete);
+            setTimeout(() => switchPhase(PHASE_FINGER_DANCE), 2000);
+        }
+        else if (state.currentPhase === PHASE_FINGER_DANCE && state.phaseProgress >= 5) {
+            showFlashMsg(t.fingerComplete);
+            setTimeout(() => switchPhase(PHASE_CRUSHER), 2000);
+        }
+        else if (state.currentPhase === PHASE_CRUSHER && state.phaseProgress >= 6) {
+            showFlashMsg(t.crusherComplete);
+            setTimeout(() => switchPhase(PHASE_HEART), 2000);
+        }
+    }
+
+    function showFlashMsg(text) {
+        state.flashMsg = text;
+        state.flashTimer = 100;
+    }
+
+    // --- 生成逻辑 ---
+    function spawnHeartTargets() {
+        state.targets = [];
+        const cx = state.width / 2;
+        const cy = state.height / 2;
+        const scale = (state.height * config.heartScale) / 16;
+        for (let i = 0; i < 5; i++) {
+            let t = 0.3 + (i/4) * 2.5;
+            let pos = getHeartCoordinates(t, scale, cx, cy);
+            state.targets.push({ x: pos.x, y: pos.y, active: true, type: 'touch', id: `hr-${i}` });
+            t = 3.4 + (i/4) * 2.5;
+            pos = getHeartCoordinates(t, scale, cx, cy);
+            state.targets.push({ x: pos.x, y: pos.y, active: true, type: 'touch', id: `hl-${i}` });
+        }
+    }
+
+    function spawnArcherTargets() {
+        state.targets = [
+            { x: state.width * 0.1, y: state.height * 0.4, active: true, type: 'hold', side: 'left', timer: 0 },
+            { x: state.width * 0.9, y: state.height * 0.4, active: true, type: 'hold', side: 'right', timer: 0 }
+        ];
+    }
+    
+    function spawnFingerTarget() {
+        const keys = Object.keys(GESTURES);
+        state.targetGestureKey = keys[Math.floor(Math.random() * keys.length)];
+        state.fingerTimer = config.fingerDanceDuration;
+    }
+
+    function spawnCrusherTargets() {
+        state.targets = [];
+        for (let i=0; i<3; i++) {
+            state.targets.push({
+                x: state.width * (0.2 + Math.random() * 0.6),
+                y: state.height * (0.2 + Math.random() * 0.6),
+                active: true,
+                type: 'crush',
+                r: 40 + Math.random() * 20
+            });
+        }
+    }
+
+    // --- 更新逻辑 ---
+    function update() {
+        if (!state.isPlaying) return;
+        if (state.flashTimer > 0) state.flashTimer--;
+
+        if (state.currentPhase === PHASE_HEART) {
+            let allCleared = true;
+            state.targets.forEach(target => {
+                if (!target.active) return;
+                allCleared = false;
+                state.hands.forEach(h => {
+                    const dx = h.x * state.width - target.x;
+                    const dy = h.y * state.height - target.y;
+                    if (Math.hypot(dx, dy) < 40) {
+                        target.active = false;
+                        createParticles(target.x, target.y, '#f472b6');
+                        state.score += 10;
+                    }
+                });
+            });
+            if (allCleared && state.targets.length > 0) {
+                state.phaseProgress++;
+                createParticles(state.width/2, state.height/2, '#fff', 50);
+                checkPhaseCompletion();
+                if (state.currentPhase === PHASE_HEART) setTimeout(spawnHeartTargets, 1000);
+            }
+        }
+        else if (state.currentPhase === PHASE_ARCHER) {
+            if (state.targets.length === 0) return;
+            const leftTarget = state.targets[0];
+            const rightTarget = state.targets[1];
+            let leftTouched = false;
+            let rightTouched = false;
+
+            state.hands.forEach(h => {
+                if (Math.hypot(h.x * state.width - leftTarget.x, h.y * state.height - leftTarget.y) < 60) leftTouched = true;
+                if (Math.hypot(h.x * state.width - rightTarget.x, h.y * state.height - rightTarget.y) < 60) rightTouched = true;
+            });
+
+            if (leftTouched && rightTouched) {
+                state.archerTimer++;
+                if (instructionEl) {
+                    instructionEl.innerHTML = `${t.phase2Hold} ${(state.archerTimer / config.archerHoldTime * 100).toFixed(0)}%`;
+                    instructionEl.style.color = "#fbbf24";
+                }
+                if (state.archerTimer >= config.archerHoldTime) {
+                    state.score += 500;
+                    state.phaseProgress++;
+                    state.archerTimer = 0;
+                    createParticles(leftTarget.x, leftTarget.y, '#fbbf24', 30);
+                    createParticles(rightTarget.x, rightTarget.y, '#fbbf24', 30);
+                    createParticles(state.width/2, state.height/2, '#fff', 100);
+                    showFlashMsg(t.energyShot);
+                    checkPhaseCompletion();
+                }
+            } else {
+                state.archerTimer = Math.max(0, state.archerTimer - 2);
+                if (instructionEl) {
+                    instructionEl.innerHTML = t.phase2Pull;
+                    instructionEl.style.color = "#fff";
+                }
+            }
+        }
+        else if (state.currentPhase === PHASE_FINGER_DANCE) {
+            if (!state.targetGestureKey) return;
+            state.fingerTimer--;
+
+            let correctCount = 0;
+            state.hands.forEach(h => {
+                if (h.gesture === state.targetGestureKey) correctCount++;
+            });
+
+            if (correctCount >= 2) {
+                state.score += 200;
+                state.phaseProgress++;
+                createParticles(state.width/2, state.height/2, GESTURES[state.targetGestureKey].color, 60);
+                showFlashMsg(t.great);
+                checkPhaseCompletion();
+                if (state.currentPhase === PHASE_FINGER_DANCE) {
+                    spawnFingerTarget();
+                }
+            } 
+            else if (state.fingerTimer <= 0) {
+                state.score -= 50;
+                createParticles(state.width/2, state.height/2, '#ef4444', 10);
+                if (instructionEl) instructionEl.innerHTML = t.tooSlow;
+                spawnFingerTarget();
+            }
+        }
+        else if (state.currentPhase === PHASE_CRUSHER) {
+            let activeCount = 0;
+            state.targets.forEach(target => {
+                if (!target.active) return;
+                activeCount++;
+                state.hands.forEach(h => {
+                    const dist = Math.hypot(h.x * state.width - target.x, h.y * state.height - target.y);
+                    if (dist < target.r + 20) {
+                        if (h.gesture === 'FIST') {
+                            target.active = false;
+                            createParticles(target.x, target.y, '#9ca3af', 20);
+                            createParticles(target.x, target.y, '#ef4444', 10);
+                            state.score += 50;
+                            state.phaseProgress++;
+                        }
+                    }
+                });
+            });
+            if (activeCount === 0) {
+                checkPhaseCompletion();
+                if (state.currentPhase === PHASE_CRUSHER) setTimeout(spawnCrusherTargets, 800);
+            }
+        }
+
+        scoreEl.innerText = state.score;
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+            let p = state.particles[i];
+            p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+            if (p.life <= 0) state.particles.splice(i, 1);
+        }
+    }
+
+    function createParticles(x, y, color, count=10) {
+        for (let i=0; i<count; i++) {
+            state.particles.push({
+                x: x, y: y, vx: (Math.random()-0.5) * 15, vy: (Math.random()-0.5) * 15,
+                life: 1.0, color: color, size: Math.random() * 6 + 2
+            });
+        }
+    }
+
+    // --- 绘图 ---
+    function draw() {
+        if (!ctx || !canvas || state.width === 0 || state.height === 0) {
+            requestAnimationFrame(gameLoop);
+            return;
+        }
+        
+        ctx.fillStyle = config.colors.bg;
+        ctx.fillRect(0, 0, state.width, state.height);
+        if (!state.isPlaying) { requestAnimationFrame(gameLoop); return; }
+
+        if (state.currentPhase === PHASE_HEART) {
+            drawHeartPath(); drawTouchTargets();
+        } else if (state.currentPhase === PHASE_ARCHER) {
+            drawArcherUI();
+        } else if (state.currentPhase === PHASE_FINGER_DANCE) {
+            drawFingerDanceUI();
+        } else if (state.currentPhase === PHASE_CRUSHER) {
+            drawCrusherTargets();
+        }
+
+        drawHands();
+        
+        state.particles.forEach(p => {
+            ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+
+        if (state.flashTimer > 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, state.flashTimer/20)})`;
+            ctx.font = "bold 60px 'Segoe UI'";
+            ctx.textAlign = "center";
+            ctx.fillText(state.flashMsg, state.width/2, state.height/2);
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function drawFingerDanceUI() {
+        if (!state.targetGestureKey) return;
+        const gesture = GESTURES[state.targetGestureKey];
+        const cx = state.width / 2;
+        const cy = state.height / 2;
+
+        const pct = state.fingerTimer / config.fingerDanceDuration;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 120, -Math.PI/2, -Math.PI/2 + Math.PI*2*pct);
+        ctx.strokeStyle = gesture.color;
+        ctx.lineWidth = 15;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        ctx.fillStyle = "white";
+        ctx.font = "100px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(gesture.emoji, cx, cy - 20);
+        
+        ctx.font = "30px 'Segoe UI'";
+        ctx.fillText(gesture.label, cx, cy + 60);
+
+        if (instructionEl) instructionEl.innerHTML = `${t.makeGesture} <span style="color:${gesture.color}; font-size: 1.2em;">${gesture.label} ${gesture.emoji}</span>`;
+    }
+
+    function drawHeartPath() {
+        const cx = state.width / 2; const cy = state.height / 2;
+        const scale = (state.height * config.heartScale) / 16;
+        ctx.beginPath();
+        for (let t = 0; t <= Math.PI * 2; t += 0.05) {
+            const pos = getHeartCoordinates(t, scale, cx, cy);
+            if (t===0) ctx.moveTo(pos.x, pos.y); else ctx.lineTo(pos.x, pos.y);
+        }
+        ctx.strokeStyle = "rgba(236, 72, 153, 0.2)"; ctx.lineWidth = 10; ctx.stroke();
+    }
+
+    function drawTouchTargets() {
+        state.targets.forEach(target => {
+            if(!target.active) return;
+            ctx.beginPath(); ctx.arc(target.x, target.y, 25, 0, Math.PI*2);
+            ctx.fillStyle = "#f472b6"; ctx.fill();
+            ctx.beginPath(); ctx.arc(target.x, target.y, 25 + Math.sin(Date.now()/100)*5, 0, Math.PI*2);
+            ctx.strokeStyle = "white"; ctx.stroke();
+        });
+    }
+
+    function drawArcherUI() {
+        if (state.targets.length < 2) return;
+        const t1 = state.targets[0]; const t2 = state.targets[1];
+        ctx.beginPath(); ctx.moveTo(t1.x, t1.y); ctx.lineTo(t2.x, t2.y);
+        ctx.strokeStyle = `rgba(251, 191, 36, ${0.2 + (state.archerTimer/config.archerHoldTime)*0.8})`;
+        ctx.lineWidth = 4 + (state.archerTimer/config.archerHoldTime) * 10; ctx.stroke();
+        [t1, t2].forEach(target => {
+            ctx.beginPath(); ctx.arc(target.x, target.y, 50, 0, Math.PI*2);
+            ctx.strokeStyle = config.colors.archerBeam; ctx.lineWidth = 4;
+            ctx.setLineDash([10, 5]); ctx.stroke(); ctx.setLineDash([]);
+            ctx.beginPath(); ctx.arc(target.x, target.y, 30, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(251, 191, 36, 0.3)`; ctx.fill();
+        });
+    }
+
+    function drawCrusherTargets() {
+        state.targets.forEach(target => {
+            if(!target.active) return;
+            ctx.save(); ctx.translate(target.x, target.y);
+            ctx.beginPath(); ctx.arc(0, 0, target.r, 0, Math.PI*2);
+            ctx.fillStyle = "#4b5563"; ctx.fill();
+            ctx.strokeStyle = "#9ca3af"; ctx.lineWidth = 3; ctx.stroke();
+            ctx.fillStyle = "white"; ctx.font = "bold 16px Arial";
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(t.crush, 0, 0);
+            ctx.restore();
+        });
+    }
+
+    function drawHands() {
+        state.hands.forEach(h => {
+            const x = h.x * state.width; const y = h.y * state.height;
+            const color = h.label === 'Left' ? config.colors.leftHand : config.colors.rightHand;
+            ctx.save(); ctx.translate(x, y);
+            
+            ctx.font = "30px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(GESTURES[h.gesture]?.emoji || '', 0, -40);
+
+            if (h.gesture === 'FIST') {
+                ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2);
+                ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.stroke();
+            } else {
+                ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI*2);
+                ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.stroke();
+            }
+            ctx.restore();
+        });
+    }
+
+    // --- 初始化画布 ---
+    function resizeCanvas() {
+        if (!canvas) return;
+        state.width = window.innerWidth;
+        state.height = window.innerHeight;
+        canvas.width = state.width;
+        canvas.height = state.height;
+        if (previewCanvas) {
+            previewCanvas.width = 200;
+            previewCanvas.height = 150;
+        }
+    }
+
+    // 初始化UI文本
+    function initUITexts() {
+        try {
+            const pageTitleEl = document.getElementById('page-title');
+            const loadingTextEl = document.getElementById('loading-text');
+            const gameTitleEl = document.getElementById('game-title');
+            const menuDescEl = document.getElementById('menu-desc');
+            const handStatusEl = document.getElementById('hand-status');
+            const startIndicatorEl = document.getElementById('start-indicator');
+            const skipHintEl = document.getElementById('skip-hint');
+            
+            if (pageTitleEl) pageTitleEl.textContent = t.title;
+            if (loadingTextEl) loadingTextEl.textContent = t.loading;
+            if (gameTitleEl) gameTitleEl.textContent = t.gameTitle;
+            if (menuDescEl) menuDescEl.innerHTML = 
+                `${t.menuDesc}<br>` +
+                `1. <b>${t.phase1}</b> ${t.phase1Desc}<br>` +
+                `2. <b>${t.phase2}</b> ${t.phase2Desc}<br>` +
+                `3. <b>${t.phase3}</b> ${t.phase3Desc}<br>` +
+                `4. <b>${t.phase4}</b> ${t.phase4Desc}`;
+            if (handStatusEl) handStatusEl.textContent = t.raiseHands;
+            if (startIndicatorEl) startIndicatorEl.textContent = t.waitingCamera;
+            if (skipHintEl) skipHintEl.textContent = t.skipHint;
+        } catch(e) {
+            console.error('Error initializing UI texts:', e);
+        }
+    }
+
+    // 等待DOM加载完成后再初始化
+    function initializeGame() {
+        if (!canvas || !ctx) {
+            console.error('Canvas initialization failed');
+            return;
+        }
+        
+        initUITexts();
+        resizeCanvas();
+        
+        if (loadingScreen) loadingScreen.classList.add('hidden');
+        if (menuScreen) menuScreen.classList.remove('hidden');
+        
+        // 启动摄像头和游戏循环
+        if (videoElement && previewCtx) {
+            startCamera();
+        }
+        
+        // 开始绘制循环
+        gameLoop();
+    }
+    
+    // 确保DOM完全加载
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeGame);
+    } else {
+        // DOM已加载，但可能需要等待一下确保所有元素都准备好
+        setTimeout(initializeGame, 100);
+    }
+    
+    function startCamera() {
+        if (!videoElement || !previewCtx || !previewCanvas) {
+            console.error('Camera initialization failed: missing elements');
+            return;
+        }
+        
+        // --- MediaPipe Hands 初始化 ---
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults((results) => {
+            // 更新视频尺寸（如果可用）
+            if (results.image && results.image.width && results.image.height) {
+                state.videoWidth = results.image.width;
+                state.videoHeight = results.image.height;
+                state.videoAspectRatio = state.videoWidth / state.videoHeight;
+            }
+
+            state.hands = [];
+            if (results.multiHandLandmarks) {
+                results.multiHandLandmarks.forEach((landmarks, idx) => {
+                    const wrist = landmarks[0];
+                    const gesture = detectGesture(landmarks);
+                    // 镜像翻转：视频是镜像显示的，所以左右手标签需要交换
+                    const originalLabel = results.multiHandedness[idx].label;
+                    const handLabel = originalLabel === 'Left' ? 'Right' : 'Left';
+                    
+                    // 坐标转换：MediaPipe 返回的是归一化坐标（基于视频流）
+                    // 需要映射到画布坐标，考虑宽高比差异
+                    // 同时需要镜像翻转 X 坐标
+                    const canvasAspectRatio = state.width / state.height;
+                    let mappedX, mappedY;
+                    
+                    // 先镜像翻转 X 坐标（1 - wrist.x）
+                    const mirroredX = 1 - wrist.x;
+                    
+                    if (canvasAspectRatio > state.videoAspectRatio) {
+                        // 画布更宽，视频会在上下留黑边
+                        const scale = state.height / state.videoHeight;
+                        const offsetX = (state.width - state.videoWidth * scale) / 2;
+                        mappedX = (mirroredX * state.videoWidth * scale) + offsetX;
+                        mappedY = wrist.y * state.height;
+                    } else {
+                        // 画布更高，视频会在左右留黑边
+                        const scale = state.width / state.videoWidth;
+                        const offsetY = (state.height - state.videoHeight * scale) / 2;
+                        mappedX = mirroredX * state.width;
+                        mappedY = (wrist.y * state.videoHeight * scale) + offsetY;
+                    }
+                    
+                    state.hands.push({
+                        x: mappedX / state.width,  // 归一化到画布
+                        y: mappedY / state.height,
+                        gesture: gesture,
+                        label: handLabel
+                    });
+                });
+            }
+
+            // 自动启动检测
+            if (!state.isPlaying && state.hands.length >= 2) {
+                state.autoStartTimer++;
+                if (state.autoStartTimer >= config.autoStartThreshold) {
+                    if (startIndicator) {
+                        startIndicator.classList.add('ready');
+                        startIndicator.innerText = t.detectedHands;
+                    }
+                    setTimeout(() => startGame(), 500);
+                } else {
+                    const pct = (state.autoStartTimer / config.autoStartThreshold * 100).toFixed(0);
+                    if (startIndicator) startIndicator.innerText = `${t.detecting} ${pct}%`;
+                    if (handStatusEl) handStatusEl.innerText = t.detectedHand.replace('{count}', state.hands.length);
+                }
+            } else if (!state.isPlaying) {
+                state.autoStartTimer = 0;
+                if (startIndicator) startIndicator.innerText = t.waitingCamera;
+                if (handStatusEl) handStatusEl.innerText = state.hands.length === 1 ? t.needTwoHands : t.raiseHands;
+            }
+
+            // 绘制预览（保持宽高比）
+            if (results.image && previewCtx && previewCanvas) {
+                previewCtx.save();
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                
+                const previewAspectRatio = previewCanvas.width / previewCanvas.height;
+                const imageAspectRatio = results.image.width / results.image.height;
+                
+                let drawWidth, drawHeight, drawX, drawY;
+                
+                if (previewAspectRatio > imageAspectRatio) {
+                    // 预览更宽，图片会在上下留黑边
+                    drawHeight = previewCanvas.height;
+                    drawWidth = drawHeight * imageAspectRatio;
+                    drawX = (previewCanvas.width - drawWidth) / 2;
+                    drawY = 0;
+                } else {
+                    // 预览更高，图片会在左右留黑边
+                    drawWidth = previewCanvas.width;
+                    drawHeight = drawWidth / imageAspectRatio;
+                    drawX = 0;
+                    drawY = (previewCanvas.height - drawHeight) / 2;
+                }
+                
+                // 水平翻转（镜像效果）
+                previewCtx.scale(-1, 1);
+                previewCtx.translate(-previewCanvas.width, 0);
+                previewCtx.drawImage(results.image, previewCanvas.width - drawX - drawWidth, drawY, drawWidth, drawHeight);
+                previewCtx.restore();
+            }
+        });
+
+        // --- 摄像头启动 ---
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720
+        });
+
+        camera.start();
+
+        // 监听视频尺寸变化
+        videoElement.addEventListener('loadedmetadata', () => {
+            state.videoWidth = videoElement.videoWidth || 1280;
+            state.videoHeight = videoElement.videoHeight || 720;
+            state.videoAspectRatio = state.videoWidth / state.videoHeight;
+        });
+    }
+</script>
+</body>
+</html>
+

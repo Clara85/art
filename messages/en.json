@@ -11,6 +11,11 @@
       "title": "Portfolio",
       "description": "Explore my collection of artworks and creations",
       "button": "View Works"
+    },
+    "interactiveGames": {
+      "title": "Interactive Games",
+      "description": "Experience full-body fitness games with 6 challenge levels: Heart Warm-up, Galaxy Archer, Star Seal, Meteor Crusher, Fruit Slice, and Gesture Drawing",
+      "button": "Start Game"
     }
   },
   "nav": {

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { getMessages } from 'next-intl/server';
 
 // Helper function to render text with bold formatting
 function renderText(text: string) {
@@ -18,7 +19,8 @@ export default async function CoursesPage({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await import(`@/messages/${locale}.json`).then(m => m.default);
+  const messages = await getMessages();
+  const t = (messages.course || {}) as any;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
@@ -36,7 +38,7 @@ export default async function CoursesPage({
       {/* 课程标题 */}
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-light text-gray-900 mb-2">
-          {t.course.title}
+          {t.title}
         </h1>
       </div>
 
@@ -45,7 +47,7 @@ export default async function CoursesPage({
         <div className="relative w-4/5 aspect-square max-w-2xl mx-auto overflow-hidden rounded-lg bg-gray-50">
           <Image
             src="/images/cup_exercise.jpg"
-            alt={t.course.title}
+            alt={t.title}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 80vw, 640px"
@@ -55,28 +57,28 @@ export default async function CoursesPage({
       </div>
 
       {/* 课程介绍 */}
-      {t.course.intro && (
+      {t.intro && t.intro.description && (
         <section className="mb-20">
           <div className="prose prose-gray max-w-none mb-12">
             <p className="text-gray-600 leading-relaxed mb-8">
-              {t.course.intro.description.split('**').map((part: string, i: number) => 
+              {t.intro.description.split('**').map((part: string, i: number) => 
                 i % 2 === 1 ? <strong key={i}>{part}</strong> : part
               )}
             </p>
 
-            {t.course.intro.whatYouLearn && (
+            {t.intro.whatYouLearn && (
               <div className="space-y-8">
                 <h2 className="text-2xl font-medium text-gray-900 mb-6">
-                  {t.course.intro.whatYouLearn.title}
+                  {t.intro.whatYouLearn.title}
                 </h2>
 
-                {t.course.intro.whatYouLearn.foundations && (
+                {t.intro.whatYouLearn.foundations && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-3">
-                      {t.course.intro.whatYouLearn.foundations.title}
+                      {t.intro.whatYouLearn.foundations.title}
                     </h3>
                     <ul className="space-y-2 text-gray-600">
-                      {t.course.intro.whatYouLearn.foundations.content.map((item: string, idx: number) => (
+                      {t.intro.whatYouLearn.foundations.content.map((item: string, idx: number) => (
                         <li key={idx} className="flex items-start">
                           <span className="text-gray-400 mr-3 mt-1.5">•</span>
                           <span>{renderText(item)}</span>
@@ -86,22 +88,22 @@ export default async function CoursesPage({
                   </div>
                 )}
 
-                {t.course.intro.whatYouLearn.medium && (
+                {t.intro.whatYouLearn.medium && t.intro.whatYouLearn.medium.content && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-3">
-                      {t.course.intro.whatYouLearn.medium.title}
+                      {t.intro.whatYouLearn.medium.title}
                     </h3>
-                    <p className="text-gray-600">{renderText(t.course.intro.whatYouLearn.medium.content)}</p>
+                    <p className="text-gray-600">{renderText(typeof t.intro.whatYouLearn.medium.content === 'string' ? t.intro.whatYouLearn.medium.content : '')}</p>
                   </div>
                 )}
 
-                {t.course.intro.whatYouLearn.story && (
+                {t.intro.whatYouLearn.story && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-3">
-                      {t.course.intro.whatYouLearn.story.title}
+                      {t.intro.whatYouLearn.story.title}
                     </h3>
                     <ul className="space-y-2 text-gray-600">
-                      {t.course.intro.whatYouLearn.story.content.map((item: string, idx: number) => (
+                      {t.intro.whatYouLearn.story.content.map((item: string, idx: number) => (
                         <li key={idx} className="flex items-start">
                           <span className="text-gray-400 mr-3 mt-1.5">•</span>
                           <span>{renderText(item)}</span>
@@ -111,31 +113,31 @@ export default async function CoursesPage({
                   </div>
                 )}
 
-                {t.course.intro.whatYouLearn.masters && (
+                {t.intro.whatYouLearn.masters && t.intro.whatYouLearn.masters.content && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-3">
-                      {t.course.intro.whatYouLearn.masters.title}
+                      {t.intro.whatYouLearn.masters.title}
                     </h3>
-                    <p className="text-gray-600">{renderText(t.course.intro.whatYouLearn.masters.content)}</p>
+                    <p className="text-gray-600">{renderText(typeof t.intro.whatYouLearn.masters.content === 'string' ? t.intro.whatYouLearn.masters.content : '')}</p>
                   </div>
                 )}
 
-                {t.course.intro.whatYouLearn.projects && (
+                {t.intro.whatYouLearn.projects && t.intro.whatYouLearn.projects.content && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-3">
-                      {t.course.intro.whatYouLearn.projects.title}
+                      {t.intro.whatYouLearn.projects.title}
                     </h3>
-                    <p className="text-gray-600">{renderText(t.course.intro.whatYouLearn.projects.content)}</p>
+                    <p className="text-gray-600">{renderText(typeof t.intro.whatYouLearn.projects.content === 'string' ? t.intro.whatYouLearn.projects.content : '')}</p>
                   </div>
                 )}
 
-                {t.course.intro.whatYouLearn.final && (
+                {t.intro.whatYouLearn.final && t.intro.whatYouLearn.final.content && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-3">
-                      {t.course.intro.whatYouLearn.final.title}
+                      {t.intro.whatYouLearn.final.title}
                     </h3>
                     <p className="text-gray-600">
-                      {t.course.intro.whatYouLearn.final.content.split(/(\*\*.*?\*\*|_.*?_)/g).map((part: string, i: number) => {
+                      {typeof t.intro.whatYouLearn.final.content === 'string' ? t.intro.whatYouLearn.final.content.split(/(\*\*.*?\*\*|_.*?_)/g).map((part: string, i: number) => {
                         if (part.startsWith('**') && part.endsWith('**')) {
                           return <strong key={i}>{part.slice(2, -2)}</strong>;
                         }
@@ -143,7 +145,7 @@ export default async function CoursesPage({
                           return <em key={i}>{part.slice(1, -1)}</em>;
                         }
                         return part;
-                      })}
+                      }) : ''}
                     </p>
                   </div>
                 )}
@@ -157,12 +159,13 @@ export default async function CoursesPage({
       <div className="border-t border-gray-200 my-16"></div>
 
       {/* 学习理念 */}
+      {t.learningPhilosophy && t.learningPhilosophy.points && (
       <section className="mb-20 border-b border-gray-100 pb-12">
         <h2 className="text-xl font-medium text-gray-900 mb-6">
-          {t.course.learningPhilosophy.title}
+          {t.learningPhilosophy.title}
         </h2>
         <ul className="space-y-3">
-          {t.course.learningPhilosophy.points.map((point: string, index: number) => (
+          {Array.isArray(t.learningPhilosophy.points) && t.learningPhilosophy.points.map((point: string, index: number) => (
             <li key={index} className="flex items-start text-gray-600">
               <span className="text-gray-400 mr-3 mt-1.5">•</span>
               <span className="leading-relaxed">{point}</span>
@@ -170,14 +173,16 @@ export default async function CoursesPage({
           ))}
         </ul>
       </section>
+      )}
 
       {/* 课程列表 */}
+      {t.lessons && Array.isArray(t.lessons) && (
       <section>
         <h2 className="text-xl font-medium text-gray-900 mb-8">
           {locale === 'zh' ? '课程内容' : locale === 'fr' ? 'Contenu du Cours' : 'Course Content'}
         </h2>
         <div className="space-y-8">
-          {t.course.lessons.map((lesson: any) => (
+          {t.lessons.map((lesson: any) => (
             <div
               key={lesson.number}
               className="border-b border-gray-100 pb-8 last:border-0"
@@ -204,6 +209,7 @@ export default async function CoursesPage({
           ))}
         </div>
       </section>
+      )}
     </div>
   );
 }
